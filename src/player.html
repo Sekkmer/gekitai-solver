@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  />
+  <title>Gekitai · Strategy player</title>
+  <script>
+    try {
+      document.documentElement.dataset.theme =
+        localStorage.getItem('gekitai-theme') ||
+        (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    } catch {
+      document.documentElement.dataset.theme = 'light';
+    }
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      font:
+        16px/1.5 system-ui,
+        sans-serif;
+      color: #292b29;
+      background: #f3f0e8;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+    }
+    main {
+      max-width: 1050px;
+      margin: 48px auto;
+      padding: 0 28px;
+    }
+    header {
+      border-bottom: 1px solid #d7d3c9;
+      padding-bottom: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .eyebrow {
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #7b5144;
+    }
+    h1 {
+      font-family: Georgia, serif;
+      font-size: 48px;
+      line-height: 1.1;
+      margin: 9px 0 4px;
+      font-weight: 500;
+    }
+    header p {
+      margin: 0;
+      color: #6c6f66;
+    }
+    .badge {
+      border: 1px solid #c9c5b8;
+      border-radius: 30px;
+      padding: 8px 14px;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 560px) 1fr;
+      gap: 48px;
+      margin-top: 32px;
+    }
+    .board-wrap {
+      position: relative;
+    }
+    .columns {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      margin-left: 22px;
+      text-align: center;
+      color: #77796e;
+      font-size: 12px;
+      height: 25px;
+    }
+    .board-row {
+      display: flex;
+    }
+    .rows {
+      width: 22px;
+      display: grid;
+      grid-template-rows: repeat(6, 1fr);
+      font-size: 12px;
+      color: #77796e;
+    }
+    .rows span {
+      display: flex;
+      align-items: center;
+    }
+    .board {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+      padding: 8px;
+      background: #dedbcf;
+      border-radius: 6px;
+      box-shadow: 0 12px 35px #2626220b;
+    }
+    .cell {
+      aspect-ratio: 1;
+      border: 0;
+      border-radius: 3px;
+      background: #faf8f1;
+      position: relative;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      min-width: 0;
+      padding: 0;
+      color: #282d2b;
+    }
+    .cell:disabled {
+      cursor: default;
+    }
+    .cell:not(:disabled):hover {
+      background: #e6ecde;
+    }
+    .cell:focus-visible {
+      outline: 3px solid #447556;
+      outline-offset: -3px;
+    }
+    .cell.last {
+      box-shadow: inset 0 0 0 2px #ae694e;
+    }
+    .piece {
+      border-radius: 50%;
+      width: 69%;
+      height: 69%;
+      display: grid;
+      place-items: center;
+      font-size: clamp(18px, 3vw, 27px);
+      font-weight: 450;
+      box-shadow: 0 3px 5px #0002;
+    }
+    .piece.x {
+      background: #303a33;
+      color: #fff;
+    }
+    .piece.o {
+      background: #b65e47;
+      color: #fff;
+    }
+    .legend {
+      margin: 16px 0 0 22px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #686c63;
+    }
+    h2 {
+      font-size: 25px;
+      line-height: 1.25;
+      font-weight: 500;
+      margin: 12px 0;
+    }
+    #detail {
+      color: #64685e;
+      min-height: 70px;
+    }
+    #bound {
+      font-size: 13px;
+      color: #477051;
+      font-weight: 600;
+      margin: 14px 0;
+    }
+    .new {
+      font: inherit;
+      background: #303a33;
+      color: white;
+      border: 0;
+      border-radius: 4px;
+      padding: 11px 24px;
+      cursor: pointer;
+    }
+    .new:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+    .new:focus-visible {
+      outline: 3px solid #ae694e;
+      outline-offset: 3px;
+    }
+    .info {
+      border-top: 1px solid #d7d3c9;
+      margin-top: 25px;
+      padding-top: 18px;
+    }
+    h3 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin: 0 0 8px;
+    }
+    .info p {
+      font-size: 13px;
+      color: #686c63;
+      margin: 0;
+    }
+    #history {
+      font-size: 13px;
+      max-height: 140px;
+      overflow: auto;
+      line-height: 1.9;
+      color: #5b6057;
+    }
+    .error {
+      color: #a23426;
+      min-height: 24px;
+      font-size: 13px;
+      margin-top: 12px;
+    }
+    .note {
+      font-size: 12px;
+      color: #7b5144;
+      margin: 16px 0 0 22px;
+    }
+    footer {
+      border-top: 1px solid #d7d3c9;
+      margin-top: 35px;
+      padding-top: 16px;
+      color: #797c72;
+      font-size: 12px;
+    }
+    @media (max-width: 760px) {
+      main {
+        margin: 24px auto;
+        padding: 0 18px;
+      }
+      .layout {
+        grid-template-columns: 1fr;
+        gap: 24px;
+        max-width: 560px;
+        margin-inline: auto;
+      }
+      h1 {
+        font-size: 38px;
+      }
+      header {
+        align-items: flex-start;
+      }
+      .badge {
+        font-size: 10px;
+        padding: 7px 10px;
+      }
+      #detail {
+        min-height: 0;
+      }
+      .piece {
+        font-size: 25px;
+      }
+      footer {
+        margin-top: 24px;
+      }
+    }
+
+    .header-tools {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+    }
+    .theme-toggle {
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 6px 12px;
+      border: 1px solid #c9c5b8;
+      border-radius: 30px;
+      background: transparent;
+      color: inherit;
+      white-space: nowrap;
+    }
+    .theme-toggle:hover {
+      background: #dedbcf;
+    }
+    .theme-toggle:focus-visible {
+      outline: 3px solid #447556;
+      outline-offset: 3px;
+    }
+    :root[data-theme='dark'] {
+      color-scheme: dark;
+      color: #e6e8df;
+      background: #171c19;
+    }
+    [data-theme='dark'] header,
+    [data-theme='dark'] .info,
+    [data-theme='dark'] footer {
+      border-color: #39423a;
+    }
+    [data-theme='dark'] .eyebrow,
+    [data-theme='dark'] .note {
+      color: #dba48b;
+    }
+    [data-theme='dark'] header p,
+    [data-theme='dark'] #detail,
+    [data-theme='dark'] .legend,
+    [data-theme='dark'] .info p,
+    [data-theme='dark'] #history {
+      color: #b1b9ac;
+    }
+    [data-theme='dark'] .badge,
+    [data-theme='dark'] .theme-toggle {
+      border-color: #515c50;
+    }
+    [data-theme='dark'] .theme-toggle:hover {
+      background: #333e34;
+    }
+    [data-theme='dark'] .columns,
+    [data-theme='dark'] .rows,
+    [data-theme='dark'] footer {
+      color: #a0ab9b;
+    }
+    [data-theme='dark'] .board {
+      background: #394438;
+      box-shadow: 0 12px 35px #0003;
+    }
+    [data-theme='dark'] .cell {
+      background: #242d26;
+      color: #e6e8df;
+    }
+    [data-theme='dark'] .cell:not(:disabled):hover {
+      background: #3b503e;
+    }
+    [data-theme='dark'] .cell.last {
+      box-shadow: inset 0 0 0 2px #e4ad85;
+    }
+    [data-theme='dark'] .piece.x {
+      background: #c6d8b9;
+      color: #17251b;
+    }
+    [data-theme='dark'] .piece.o {
+      background: #c77960;
+      color: #171c19;
+    }
+    [data-theme='dark'] #bound {
+      color: #aad49a;
+    }
+    [data-theme='dark'] .new {
+      background: #bdd4ad;
+      color: #19251b;
+    }
+    [data-theme='dark'] .error {
+      color: #ffac98;
+    }
+    [data-theme='dark'] .cell:focus-visible,
+    [data-theme='dark'] .theme-toggle:focus-visible {
+      outline-color: #b4db9f;
+    }
+
+    .mode-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+    .mode-bar label {
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .mode-bar select {
+      font: inherit;
+      font-size: 14px;
+      border: 1px solid #c9c5b8;
+      background: #faf8f1;
+      color: inherit;
+      border-radius: 4px;
+      padding: 9px 12px;
+      max-width: 100%;
+    }
+    .mode-bar span {
+      font-size: 12px;
+      color: #686c63;
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .secondary {
+      font: inherit;
+      padding: 10px 13px;
+      border: 1px solid #c9c5b8;
+      background: transparent;
+      color: inherit;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .secondary:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+    .secondary:focus-visible,
+    .mode-bar select:focus-visible {
+      outline: 3px solid #447556;
+      outline-offset: 2px;
+    }
+    [data-theme='dark'] .mode-bar select {
+      background: #242d26;
+      border-color: #515c50;
+    }
+    [data-theme='dark'] .mode-bar span {
+      color: #b1b9ac;
+    }
+    [data-theme='dark'] .secondary {
+      border-color: #515c50;
+    }
+  </style>
+  <main>
+    <header>
+      <div>
+        <div class="eyebrow">Gekitai / 6 × 6</div>
+        <h1>Meet your match.</h1>
+        <p>Play, practice, or watch a verified win.</p>
+      </div>
+      <div class="header-tools">
+        <span class="badge" id="badge">Waiting for proof</span
+        ><button class="theme-toggle" id="theme" type="button">
+          Dark mode
+        </button>
+      </div>
+    </header>
+    <div class="mode-bar">
+      <label for="mode">Game mode</label
+      ><select id="mode">
+        <option value="verified">Face the verified strategy</option>
+        <option value="play-first">Play first · Practice</option>
+        <option value="demo">Watch demo · Both sides</option></select
+      ><span>Changing mode starts a new game.</span>
+    </div>
+    <div class="layout">
+      <section aria-label="Game board" class="board-wrap">
+        <div class="columns" aria-hidden="true">
+          <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span
+          ><span>F</span>
+        </div>
+        <div class="board-row">
+          <div class="rows" aria-hidden="true">
+            <span>1</span><span>2</span><span>3</span><span>4</span
+            ><span>5</span><span>6</span>
+          </div>
+          <div class="board" id="board"></div>
+        </div>
+        <div class="legend">
+          <span id="x">● X · First player</span
+          ><span id="o">● O · Second player</span>
+        </div>
+        <p class="note" id="start-note" hidden>
+          This certificate starts from a prepared position, not the empty board.
+        </p>
+      </section>
+      <section>
+        <div class="eyebrow" id="turn">Strategy player</div>
+        <h2 id="status" aria-live="polite">Waiting for proof</h2>
+        <p id="detail">
+          The board becomes playable after the strategy certificate passes
+          verification.
+        </p>
+        <p id="bound"></p>
+        <div class="controls">
+          <button class="new" id="reset" disabled>New game</button
+          ><span id="demo-controls" hidden
+            ><button class="secondary" id="demo-pause">Pause</button>
+            <button class="secondary" id="demo-step">Step</button></span
+          >
+        </div>
+        <div class="error" id="error" role="alert"></div>
+        <div class="info">
+          <h3>Move history</h3>
+          <div id="history">No moves yet.</div>
+        </div>
+        <div class="info">
+          <h3>How to play</h3>
+          <p id="rules">
+            Place a piece on an empty square. Adjacent pieces are pushed one
+            space outward in all eight directions if unblocked. Pieces pushed
+            off the board return to their owner. Win with three in a row or all
+            eight pieces on the board. Both players winning at once is a draw.
+          </p>
+        </div>
+      </section>
+    </div>
+    <footer>
+      A verified strategy covers every legal reply from its starting position.
+      The bound counts both players’ placements; it does not claim the shortest
+      possible win. <span id="sharing-note">One shared game per server.</span>
+    </footer>
+  </main>
+  <script>
+    'use strict';
+    let state = null,
+      busy = false,
+      demoPlaying = false,
+      connectionLost = false;
+    const $ = (id) => document.getElementById(id),
+      coord = (i) => 'ABCDEF'[i % 6] + (Math.floor(i / 6) + 1),
+      cells = [];
+    function updateThemeButton() {
+      const dark = document.documentElement.dataset.theme === 'dark';
+      $('theme').textContent = dark ? 'Light mode' : 'Dark mode';
+      $('theme').setAttribute(
+        'aria-label',
+        dark ? 'Switch to light mode' : 'Switch to dark mode',
+      );
+    }
+    $('theme').addEventListener('click', () => {
+      const theme =
+        document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = theme;
+      try {
+        localStorage.setItem('gekitai-theme', theme);
+      } catch {}
+      updateThemeButton();
+    });
+    updateThemeButton();
+    matchMedia('(prefers-color-scheme: dark)').addEventListener(
+      'change',
+      (event) => {
+        try {
+          if (localStorage.getItem('gekitai-theme')) return;
+        } catch {}
+        document.documentElement.dataset.theme = event.matches
+          ? 'dark'
+          : 'light';
+        updateThemeButton();
+      },
+    );
+    for (let i = 0; i < 36; i++) {
+      const b = document.createElement('button');
+      b.className = 'cell';
+      b.disabled = true;
+      b.setAttribute('aria-label', coord(i) + ', empty');
+      b.addEventListener('click', () => action('/api/move', { square: i }));
+      $('board').append(b);
+      cells.push(b);
+    }
+    function render(s) {
+      $('sharing-note').textContent = s.visitorSession
+        ? 'Each browser has its own game. Inactive games expire after one hour.'
+        : 'One shared game per server.';
+      state = s;
+      const ready = s.phase === 'ready',
+        practice = s.mode === 'play-first',
+        demo = s.mode === 'demo',
+        thinking = s.thinking;
+      $('mode').value = s.mode || 'verified';
+      $('mode').disabled = busy;
+      $('mode').querySelector('[value=verified]').disabled =
+        !s.certificateReady;
+      $('mode').querySelector('[value=demo]').disabled = !s.demoAvailable;
+      $('reset').disabled = busy || !ready;
+      $('demo-controls').hidden = !demo;
+      $('demo-pause').textContent = demoPlaying ? 'Pause' : 'Resume';
+      $('demo-pause').disabled =
+        busy || thinking || !s.demoLength || s.demoComplete;
+      $('demo-step').disabled =
+        busy || thinking || !s.demoLength || s.demoComplete;
+      $('badge').textContent = ready
+        ? thinking
+          ? 'Thinking…'
+          : practice
+            ? s.bound !== null
+              ? 'Forced win verified'
+              : 'Practice · 3 seconds'
+            : 'Strategy verified'
+        : s.phase === 'checking'
+          ? 'Checking proof'
+          : s.phase === 'error'
+            ? 'Proof rejected'
+            : 'Waiting for proof';
+      for (let i = 0; i < 36; i++) {
+        const v = ready ? s.board[i] : 0,
+          b = cells[i];
+        b.replaceChildren();
+        if (v) {
+          const p = document.createElement('span');
+          p.className = 'piece ' + (v === 1 ? 'x' : 'o');
+          p.textContent = v === 1 ? 'X' : 'O';
+          b.append(p);
+        }
+        b.disabled = !ready || !s.humanTurn || busy || thinking || v !== 0;
+        b.classList.toggle('last', ready && s.moves.at(-1) === i);
+        b.setAttribute(
+          'aria-label',
+          coord(i) + ', ' + (v === 1 ? 'X' : v === 2 ? 'O' : 'empty'),
+        );
+      }
+      $('start-note').hidden = !ready || !s.nonemptyStart;
+      if (s.analysisError) $('error').textContent = s.analysisError;
+      if (!ready) {
+        $('status').textContent =
+          s.phase === 'checking'
+            ? 'Checking the strategy…'
+            : s.phase === 'error'
+              ? 'Certificate rejected'
+              : 'Waiting for proof';
+        $('detail').textContent = s.message;
+        $('bound').textContent = '';
+        return;
+      }
+      $('turn').textContent = demo
+        ? 'Computer vs computer'
+        : 'You play ' + (s.computerFirst ? 'O · Second' : 'X · First');
+      $('status').textContent =
+        s.result ||
+        (thinking
+          ? demo
+            ? 'Preparing the demo…'
+            : 'Computer is thinking…'
+          : demo
+            ? demoPlaying
+              ? 'Watch the game.'
+              : 'Demo paused.'
+            : 'Your move.');
+      if (demo) {
+        $('detail').textContent = thinking
+          ? 'Finding delaying replies within the verified strategy.'
+          : s.result
+            ? `The verified line finished in ${s.moves.length} placements.`
+            : 'The winning side follows its verified strategy. The other side plays replies chosen to delay the win.';
+        $('bound').textContent = s.demoLength
+          ? `${s.moves.length} / ${s.demoLength} placements · ${s.demoLength === s.bound ? 'This line reaches the full certified bound.' : `The certified upper bound is ${s.bound}.`}`
+          : '';
+      } else if (practice) {
+        $('detail').textContent = s.result
+          ? 'Start a new game to try another opening.'
+          : thinking
+            ? 'Searching for a forced win and checking any strategy it finds. Usually about three seconds.'
+            : 'You move first. The computer searches for winning replies after each move.';
+        $('bound').textContent =
+          s.bound !== null
+            ? `A forced win was verified after placement ${s.proofAt}.${s.result ? '' : ` At most ${s.remaining} placements remain.`}`
+            : 'No forced win has been verified for the computer. A three-second search can miss mistakes; its ordinary moves are not guaranteed perfect.';
+      } else {
+        $('detail').textContent = s.result
+          ? 'Start a new game to try a different reply.'
+          : 'Choose any empty square. The computer responds automatically with a verified move.';
+        const objective = {
+          Clean: 'a clean win',
+          CleanOrDouble: 'a clean win or simultaneous lines',
+          DoubleOnly: 'simultaneous lines',
+        }[s.objective];
+        $('bound').textContent =
+          s.bound !== null
+            ? `Computer forces ${objective} within ${s.bound} placements from the start.${s.result ? '' : ` At most ${s.remaining} remain.`}`
+            : `Computer prevents ${s.goalFirst ? 'First' : 'Second'} player from forcing ${objective}. Repetition ends in a draw.`;
+      }
+      $('x').textContent =
+        `X · ${demo ? 'Computer' : s.computerFirst ? 'Computer' : 'You'} · ${s.firstSupply} in supply`;
+      $('o').textContent =
+        `O · ${demo ? 'Computer' : s.computerFirst ? 'You' : 'Computer'} · ${s.secondSupply} in supply`;
+      $('history').textContent = s.moves.length
+        ? s.moves
+            .map((m, i) => `${i + 1}. ${i % 2 ? 'O' : 'X'} ${coord(m)}`)
+            .join('  ·  ')
+        : 'No moves yet.';
+      $('rules').textContent =
+        `Place a piece on an empty square. Adjacent pieces are pushed one space outward ${s.diagonalPush ? 'in all eight directions' : 'orthogonally'} if unblocked. Pieces pushed off the board return to their owner. Win with three in a row or all eight pieces on the board. Both players winning at once is a draw.`;
+    }
+    async function refresh() {
+      if (busy) return;
+      try {
+        const r = await fetch('/api/state');
+        if (!r.ok) throw Error('Could not read the board');
+        const s = await r.json();
+        if (!busy && (!state || s.revision >= state.revision)) {
+          if (connectionLost) {
+            $('error').textContent = '';
+            connectionLost = false;
+          }
+          render(s);
+        }
+      } catch (e) {
+        connectionLost = true;
+        $('error').textContent = 'Connection lost. Reconnecting…';
+        cells.forEach((b) => (b.disabled = true));
+        $('reset').disabled = true;
+      }
+    }
+    async function action(path, extra = {}) {
+      if (busy || !state) return;
+      busy = true;
+      $('error').textContent = '';
+      render(state);
+      try {
+        const r = await fetch(path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ revision: state.revision, ...extra }),
+        });
+        const s = await r.json();
+        if (!r.ok) throw Error(s.error);
+        state = s;
+      } catch (e) {
+        $('error').textContent = e.message;
+      } finally {
+        busy = false;
+        render(state);
+        await refresh();
+      }
+    }
+    $('mode').addEventListener('change', () => {
+      const mode = $('mode').value;
+      demoPlaying = mode === 'demo';
+      action('/api/reset', { mode });
+    });
+    $('reset').addEventListener('click', () => action('/api/reset'));
+    $('demo-pause').addEventListener('click', () => {
+      demoPlaying = !demoPlaying;
+      render(state);
+    });
+    $('demo-step').addEventListener('click', () => {
+      demoPlaying = false;
+      action('/api/step');
+    });
+    refresh();
+    setInterval(refresh, 1000);
+    setInterval(() => {
+      if (
+        demoPlaying &&
+        !busy &&
+        !connectionLost &&
+        state?.mode === 'demo' &&
+        !state.thinking &&
+        state.demoLength &&
+        !state.demoComplete
+      )
+        action('/api/step');
+    }, 1400);
+  </script>
+</html>

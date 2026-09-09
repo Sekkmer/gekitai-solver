@@ -1,0 +1,4 @@
+web/assets/
+test/evidence/
+test/browser/node_modules/
+*.py

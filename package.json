@@ -1,0 +1,19 @@
+{
+  "name": "gekitai-solver",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Gekitai strategy player and cross-language engine tests",
+  "scripts": {
+    "format": "prettier --write web test/browser README.md docs .github package.json",
+    "format:check": "prettier --check web test/browser README.md docs .github package.json",
+    "test": "node test/browser/static-engine.mjs",
+    "test:browser": "node test/browser/static.cjs",
+    "test:motion": "node test/browser/motion.cjs",
+    "serve": "python3 -m http.server 8769 --bind 127.0.0.1 --directory web",
+    "package": "python3 scripts/package-site.py"
+  },
+  "devDependencies": {
+    "playwright": "1.58.2",
+    "prettier": "3.9.6"
+  }
+}

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  />
+  <title>Gekitai · Strategy player</title>
+  <meta
+    name="description"
+    content="Play Gekitai against a verified strategy, practice your opening, or watch an animated 25-move win."
+  />
+  <script>
+    try {
+      document.documentElement.dataset.theme =
+        localStorage.getItem('gekitai-theme') ||
+        (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    } catch {
+      document.documentElement.dataset.theme = 'light';
+    }
+  </script>
+  <link rel="stylesheet" href="./styles.css" />
+  <main>
+    <header>
+      <div>
+        <div class="eyebrow">Gekitai / 6 × 6</div>
+        <h1>Meet your match.</h1>
+        <p>Play, practice, or watch a verified win.</p>
+      </div>
+      <div class="header-tools">
+        <span class="badge" id="badge">Loading strategy</span
+        ><button class="theme-toggle" id="theme" type="button">
+          Dark mode
+        </button>
+      </div>
+    </header>
+    <div class="mode-bar">
+      <label for="mode">Game mode</label
+      ><select id="mode">
+        <option value="verified">Face the verified strategy</option>
+        <option value="play-first">Play first · Practice</option>
+        <option value="demo">Watch demo · Both sides</option></select
+      ><span>Changing mode starts a new game.</span>
+    </div>
+    <div class="layout">
+      <section aria-label="Game board" class="board-wrap">
+        <div class="columns" aria-hidden="true">
+          <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span
+          ><span>F</span>
+        </div>
+        <div class="board-row">
+          <div class="rows" aria-hidden="true">
+            <span>1</span><span>2</span><span>3</span><span>4</span
+            ><span>5</span><span>6</span>
+          </div>
+          <div class="board" id="board"></div>
+        </div>
+        <div class="legend">
+          <span id="x">● X · First player</span
+          ><span id="o">● O · Second player</span>
+        </div>
+      </section>
+      <section>
+        <div class="eyebrow" id="turn">Strategy player</div>
+        <h2 id="status" aria-live="polite">Loading strategy</h2>
+        <p id="detail">
+          The strategy loads once for verified play. Practice and the demo are
+          available immediately.
+        </p>
+        <p id="bound"></p>
+        <div class="controls">
+          <button class="new" id="reset" disabled>New game</button
+          ><span id="demo-controls" hidden
+            ><button class="secondary" id="demo-pause">Pause</button>
+            <button class="secondary" id="demo-step">Step</button></span
+          >
+        </div>
+        <div class="error" id="error" role="alert"></div>
+        <div class="info">
+          <h3>Move history</h3>
+          <div id="history">No moves yet.</div>
+        </div>
+        <div class="info">
+          <h3>How to play</h3>
+          <p id="rules">
+            Place a piece on an empty square. Adjacent pieces are pushed one
+            space outward in all eight directions if unblocked. Pieces pushed
+            off the board return to their owner. Win with three adjacent pieces
+            in a straight line, with no gaps (including diagonals), or all eight
+            pieces on the board. Both players winning at once is a draw.
+          </p>
+        </div>
+      </section>
+    </div>
+    <footer>
+      The verified strategy covers every legal reply from the empty board. The
+      25-placement bound counts both players’ moves.
+      <span id="sharing-note">Your game runs entirely in this browser.</span>
+      <p class="credits">
+        Gekitai was designed by
+        <a href="https://boardgamegeek.com/boardgamedesigner/117420/scott-brady"
+          >Scott Brady</a
+        >. Independent implementation by
+        <a href="https://github.com/Sekkmer/gekitai-solver">Sekkmer</a>.
+        <a
+          href="https://github.com/Sekkmer/gekitai-solver/blob/main/docs/RULES.md"
+          >Rules &amp; conventions</a
+        >
+      </p>
+    </footer>
+  </main>
+  <script type="module" src="./app.js"></script>
+</html>
